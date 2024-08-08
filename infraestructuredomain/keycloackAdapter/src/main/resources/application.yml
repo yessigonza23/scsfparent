@@ -1,0 +1,50 @@
+server:
+  port: 8064
+
+spring:
+  application:
+    name: infraestructuredomain-keycloack
+  cloud:
+    config:
+      enabled: false
+
+eureka: 
+  instance:
+    leaseRenewalIntervalInSeconds: 10
+    health-check-url-path: /actuator/health
+    metadata-map:
+      startup: ${random.int}    #needed to trigger info and endpoint update after restart
+    preferIpAddress: true  
+    ip-address: 10.41.2.12
+    instance-id: ${spring.application.name}:${server.port}
+  client:
+    registryFetchIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVER:http://10.41.2.12:8761/eureka}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: ALWAYS
+
+keycloak:
+  base-uri: ${KEYCLOACK_SERVER:http://10.41.2.12:8080/realms/scsf/protocol/openid-connect/}
+  authorization-uri: ${keycloak.base-uri}auth
+  user-info-uri: ${keycloak.base-uri}userinfo
+  token-uri: ${keycloak.base-uri}token
+  logout: ${keycloak.base-uri}logout
+  jwk-set-uri: ${keycloak.base-uri}certs
+  certs-id: ${KEYCLOACK_REAL_ID:ygnT3QkAxxnlwy1mHtaDfdKdxeVVePf2TvNnrMPqU9g}
+  client-id: front-angular-access-app
+  client-secret: DXzBXNv6OyClpOhy7PyXQBKtJ99pyTTp
+  scope: profile
+  authorization-grant-type: password
+  authorization-grant-type-refresh: refresh_token
+
+logging:
+  level:
+    root: INFO

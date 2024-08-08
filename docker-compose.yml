@@ -1,0 +1,138 @@
+#see for java tunning https://docs.oracle.com/cd/E15523_01/web.1111/e13814/jvm_tuning.htm#PERFM161
+version: '3.8'
+services:
+  #Docker Compose creates a virtual network between the services and the DNS name 
+  #used for each service is its name: that’s why it’s possible to use eureka-discovery as the hostname.
+ 
+ ##########################################################################     
+ #eureka server
+ ##########################################################################
+ 
+  registry-discovery:
+    container_name: eureka_container
+    image: eureka_image
+    ports:
+      - 8761:8761
+    environment:
+       - JAVA_OPTS=
+         -Xms256M 
+         -Xmx256M
+         
+ ##########################################################################     
+ #configuration service
+ ##########################################################################  
+  configuration:
+    container_name: configserver_container
+    image: configserver_image
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: http://10.41.1.72/jose.alvear/config-server-repo.git
+      SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME: jose.alvear
+      SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD: p.123456
+        - JAVA_OPTS=
+          -Xms256M 
+          -Xmx256M
+          -DEUREKA_SERVER=http://registry-discovery:8761/eureka/
+          #-Dspring.cloud.config.server.native.searchLocations=/var/config-data
+    depends_on:
+      - registry-discovery
+    ports:
+      - 8888:8888
+      
+ ##########################################################################     
+ #administration service
+ ##########################################################################  
+  administration:
+    container_name: adminserver_container
+    image: adminserver_image    
+      #All projets will have a variable value  DEUREKA_SERVER this tell where find a registry-discovery server 
+    environment:
+      - JAVA_OPTS=
+         -Xms256M 
+         -Xmx256M
+         -DEUREKA_SERVER=http://registry-discovery:8761/eureka/
+         #-Dspring.cloud.config.server.native.searchLocations=/var/config-data
+    depends_on:
+      - registry-discovery
+    ports:
+      - 8762:8762
+      
+ ##########################################################################     
+ #apigateway service
+ ##########################################################################  
+  apigateway:
+    container_name: apigatewayserver_container
+    image: apigatewayserver_image
+      #All projets will have a variable value  DEUREKA_SERVER this tell where find a registry-discovery server 
+    environment:
+      - JAVA_OPTS=
+         -Xms256M 
+         -Xmx256M
+         -DEUREKA_SERVER=http://registry-discovery:8761/eureka/
+         #-Dspring.cloud.config.server.native.searchLocations=/var/config-data
+    depends_on:
+      - registry-discovery
+    ports:
+      - 8760:8760      
+
+##########################################################################     
+ #keycloack Adapter service
+ ##########################################################################  
+  keycloack:
+    container_name: keycloackadapter_container
+    image: keycloackadapter_image    
+      #All projets will have a variable value  DEUREKA_SERVER this tell where find a registry-discovery server 
+    environment:
+      - JAVA_OPTS=
+         -Xms256M 
+         -Xmx256M
+         -DEUREKA_SERVER=http://registry-discovery:8761/eureka/
+         -DKEYCLOACK_SERVER=http://keycloack_server:8080/realms/
+         -DKEYCLOACK_REAL_ID=Y4VHuDHheKmTnbs_Caf69skVQR9guhY4cvJ8Yd2FFpc
+         #-Dspring.cloud.config.server.native.searchLocations=/var/config-data
+    depends_on:
+      - registry-discovery
+    ports:
+      - 8764:8764
+ 
+ ##########################################################################     
+ #keycloack Server
+ ##########################################################################  
+  keycloack_server:
+    container_name: keycloakserver_container
+    image: keycloakserver_image
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: jdbc:postgresql://10.41.2.2:5432/control
+      DB_DATABASE: control
+      DB_USER: postgres
+      DB_PASSWORD: p0st2021.
+        - JAVA_OPTS=
+          -Xms256M 
+          -Xmx256M
+          -DEUREKA_SERVER=http://registry-discovery:8761/eureka/
+          -DKEYCLOAK_ADMIN=admin
+          -DKEYCLOAK_ADMIN_PASSWORD=p.123456
+    command: start-dev
+    depends_on:
+      - registry-discovery
+    ports:
+      - 8763:8080
+      
+ ##########################################################################     
+ #transaction Api service
+ ##########################################################################  
+  transactions:
+    container_name: transaction_container
+    image: transaction_image
+    environment:
+      - JAVA_OPTS=
+         -Xms256M 
+         -Xmx256M
+         -DEUREKA_SERVER=http://registry-discovery:8761/eureka/
+         -Dspring.profiles.active=dev
+    depends_on:
+      - registry-discovery
+      - configuration
+    ports:
+      - 8095:8095

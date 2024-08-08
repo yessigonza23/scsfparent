@@ -1,0 +1,42 @@
+## YAML Template.
+server:
+    port: 8097
+eureka:
+  instance:
+    leaseRenewalIntervalInSeconds: 10
+    health-check-url-path: /actuator/health
+    metadata-map:
+      startup: ${random.int}    #needed to trigger info and endpoint update after restart
+    preferIpAddress: true  
+    ip-address: 10.41.2.12
+    instance-id: ${spring.application.name}:${server.port}  
+  client:
+    registryFetchIntervalSeconds: 5  
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVER:http://10.41.2.12:8761/eureka}
+spring: 
+  application:
+    name: apicontrolsite
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: infraestructuredomain-configserver
+      failFast: true
+      #name of base properties config file, before profile
+      name: application
+      profile: dev
+      #label: latest
+      username: admin
+      password: qwerty
+      retry: 
+        max-attempts: 1
+        max-interval: 1000
+management: 
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: ALWAYS

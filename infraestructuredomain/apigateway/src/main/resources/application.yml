@@ -1,0 +1,55 @@
+server:
+  port: 8760
+eureka:
+  instance:
+    leaseRenewalIntervalInSeconds: 10
+    health-check-url-path: /actuator/health
+    metadata-map:
+      startup: ${random.int}    #needed to trigger info and endpoint update after restart
+    preferIpAddress: true  
+    ip-address: 10.41.2.12
+    instance-id: ${spring.application.name}:${server.port}  
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVER:http://10.41.2.12:8761/eureka}
+logging:
+  level: 
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
+spring:
+  application: 
+    name: infraestructuredomain-apigateway
+  cloud:
+    config:
+      enabled: false
+    gateway:
+      routes:      
+        - id: keycloak_service
+          uri: lb://infraestructuredomain-keycloack
+          predicates:
+            - Path=/login
+            - Method=GET,POST,PUT,DELETE
+               
+        - id: apicontrolsite_service
+          uri: lb://apicontrolsite
+          predicates:
+            - Path=/m_site/**
+          filters:
+            - RewritePath=/m_site/(?<x>.*), /$\{x}   
+            
+        - id: apicontrolsite_full
+          uri: lb://apicontrolsite
+          predicates:
+            - Path=/site/full
+          filters:
+            - name: AuthenticationFiltering
+         
+        - id: apicontrolcoordination
+          uri: lb://apicontrolcoordination
+          predicates:
+            - Path=/coordination/**
+            - Method=GET,POST,PUT,DELETE
+          filters:
+            - name: AuthenticationFiltering 
+   
+       
